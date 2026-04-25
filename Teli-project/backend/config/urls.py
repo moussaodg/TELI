@@ -7,4 +7,7 @@ urlpatterns = [
        path('conversations/', include('conversations.urls')),
        path('rasaclient/', include('rasaclient.urls')),
        path('notifications/', include('notifications.urls')),
+       path('webhook/', include('webhook.urls')),
+       path('statistics/', include('stats.urls')),
+       
 ]

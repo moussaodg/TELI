@@ -5,7 +5,7 @@ from .models import Conversation, Message
 class ConversationAdmin(admin.ModelAdmin):
     list_display = ('id', 'is_satisfied', 'start_date', 'last_activity')
     search_fields = ('context',)
-    list_filter = ('is_satisfied', 'start_date')
+    list_filter = ('status', 'is_satisfied', 'start_date')
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):

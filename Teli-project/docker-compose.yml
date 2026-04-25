@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+
+  chatbot:
+    build: ./chatbot
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./chatbot:/app
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: teli_db
+      POSTGRES_USER: teli_user
+      POSTGRES_PASSWORD: teli_pass
+    ports:
+      - "5432:5432"

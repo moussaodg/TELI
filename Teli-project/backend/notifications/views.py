@@ -1,35 +1,36 @@
-from django.shortcuts import render
-
 from rest_framework import viewsets
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import action
+
 from .models import Notification
 from .serializers import NotificationSerializer
-from accounts.models import Administrator, role
-from rest_framework.response import Response
-from rest_framework.decorators import action
+from accounts.permissions import IsSuperAdmin
 
 
 class NotificationManagementViewset(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated, IsSuperAdmin]
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
 
     def list(self, request):
-        user = request.user
-        if not user.is_authenticated or not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'User not authenticated'}, status=401)
-        
         notifications = Notification.objects.all()
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
     
+    def retrieve(self, request, pk=None):
+        try:
+            notification = Notification.objects.get(pk=pk)
+        except Notification.DoesNotExist:
+            return Response({'message': 'Notification not found'}, status=404)
+        serializer = NotificationSerializer(notification)
+        return Response(serializer.data, status=200)
+    
+    @action(detail=True, methods=['post'], url_path='mark-as-read')
     def mark_as_read(self, request, pk=None):
         user = request.user
-        if not user.is_authenticated or not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'User not authenticated'}, status=401)
-        if user.role.authorisation != 'superadmin':
-            return Response({'message': 'User is not an administrator'}, status=403)
-        
         try:
-            notification = Notification.objects.get(id=pk)
+            notification = Notification.objects.get(pk=pk)
         except Notification.DoesNotExist:
             return Response({'message': 'Notification not found'}, status=404)
         
@@ -40,37 +41,20 @@ class NotificationManagementViewset(viewsets.ModelViewSet):
         serializer = NotificationSerializer(notification)
         return Response(serializer.data, status=200)
     
+    @action(detail=False, methods=['get'], url_path='gravity/escalation')
     def list_escalation_notifications(self, request):
-        user = request.user
-        if not user.is_authenticated or not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'User not authenticated'}, status=401)
-        if user.role.authorisation != 'superadmin':
-            return Response({'message': 'User is not an administrator'}, status=403)
-        
         notifications = Notification.objects.filter(gravity='escalation')
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
     
+    @action(detail=False, methods=['get'], url_path='gravity/system')
     def list_system_notifications(self, request):
-        user = request.user
-        if not user.is_authenticated or not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'User not authenticated'}, status=401)
-        if user.role.authorisation != 'superadmin':
-            return Response({'message': 'User is not an administrator'}, status=403)
-        
         notifications = Notification.objects.filter(gravity='system')
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)
     
-class NotificationProblemeTypeListViewset(viewsets.ViewSet):
-
-    def list_probleme_by_type(self, problem_type):
-        user = self.request.user
-        if not user.is_authenticated or not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'User not authenticated'}, status=401)
-        if user.role.authorisation != 'superadmin':
-            return Response({'message': 'User is not an administrator'}, status=403)
-        
+    @action(detail=False, methods=['get'], url_path='problem-type/(?P<problem_type>[^/.]+)')
+    def list_probleme_by_type(self, request, problem_type=None):
         notifications = Notification.objects.filter(problem_type=problem_type)
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data, status=200)

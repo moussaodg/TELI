@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'conversations',
     'rasaclient',
     'notifications',
+    'webhook',
+    'stats',
 ]
 
 MIDDLEWARE = [

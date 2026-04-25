@@ -7,6 +7,20 @@ from accounts.models import Administrator, role
 # =========================
 class Conversation(models.Model):
     context = models.JSONField(default=dict, blank=True)  # structuré
+    STATUS_CHOICES = (
+        ('BOT_ACTIVE', 'Bot active'),
+        ('ESCALATED', 'Escalated'),
+        ('HUMAN_ACTIVE', 'Human active'),
+        ('CLOSED', 'Closed'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BOT_ACTIVE')
+    administrator = models.ForeignKey(
+        Administrator,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='assigned_conversations'
+    )
     is_satisfied = models.BooleanField(default=False)
     start_date = models.DateTimeField(auto_now_add=True)
     last_activity = models.DateTimeField(auto_now=True)  # correction
@@ -24,6 +38,8 @@ class Actor(models.Model):
         ('admin', 'Admin'),
         ('bot', 'Bot'),
     )
+
+    name = models.CharField(max_length=100, blank=True, null=True)
 
     actor_type = models.CharField(max_length=10, choices=ACTOR_TYPES)
     

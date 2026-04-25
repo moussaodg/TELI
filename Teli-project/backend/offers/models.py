@@ -34,6 +34,7 @@ class Offer(models.Model):
         settings.AUTH_USER_MODEL, 
         on_delete=models.CASCADE
     )
+    is_active = models.BooleanField(default=True)
     daily_offer = models.ForeignKey(DailyOffer, on_delete=models.SET_NULL, null=True, blank=True)
     special_offer = models.ForeignKey(SpecialOffer, on_delete=models.SET_NULL, null=True, blank=True)
 
@@ -42,5 +43,14 @@ class Offer(models.Model):
         if self.daily_offer and self.special_offer:
             raise ValidationError("Une offre ne peut pas être à la fois journalière et spéciale.")
 
+    def sync_rasa(self):
+        # Placeholder for offer synchronization with Rasa / chatbot backend.
+        # This should be extended with the actual integration point.
+        return True
+
     def __str__(self):
         return f"Offre {self.code} - {self.price}FCFA - Configurateur: {self.configurator.username}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.sync_rasa()
