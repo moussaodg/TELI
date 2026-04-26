@@ -1,0 +1,10 @@
+# Python bytecode
+**/__pycache__/
+*.py[cod]
+
+# Local Python virtual environments
+Teli-project/env/
+Teli-project/chatbot/env/
+
+# Local Django database
+Teli-project/backend/db.sqlite3
