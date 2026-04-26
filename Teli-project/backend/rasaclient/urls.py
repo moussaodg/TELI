@@ -1,9 +1,11 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import SimpleRouter
 from .views import RasaClientViewSet, RasaClientManagementViewSet
 
+router = SimpleRouter()
+router.register(r'', RasaClientViewSet, basename='rasa-client-message')
+router.register(r'clients', RasaClientManagementViewSet, basename='rasa-client')
 
 urlpatterns = [
-    path('send_message/', RasaClientViewSet.as_view({'post': 'send_message'}), name='send_message'),
-    path('list/', RasaClientManagementViewSet.as_view({'get': 'list_all_rasa_clients'}), name='list_rasa_clients'),
-    path('<int:pk>/', RasaClientManagementViewSet.as_view({'get': 'list_single_rasa_client'}), name='single_rasa_client'),
+    path('', include(router.urls)),
 ]

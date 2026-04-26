@@ -1,7 +1,10 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import SimpleRouter
 from .views import WebhookViewSet
 
+router = SimpleRouter()
+router.register(r'', WebhookViewSet, basename='webhook')
+
 urlpatterns = [
-    path('verify/', WebhookViewSet.as_view({'get': 'verify'}), name='verify_webhook'),
-    path('receive/', WebhookViewSet.as_view({'post': 'receive'}), name='receive_webhook'),
+    path('', include(router.urls)),
 ]

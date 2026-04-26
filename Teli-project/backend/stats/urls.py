@@ -1,6 +1,10 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import SimpleRouter
 from .views import DashboardStatisticsViewSet
 
+router = SimpleRouter()
+router.register(r'', DashboardStatisticsViewSet, basename='dashboard')
+
 urlpatterns = [
-    path('dashboard/', DashboardStatisticsViewSet.as_view({'get': 'dashboard'}), name='dashboard_statistics'),
+    path('', include(router.urls)),
 ]

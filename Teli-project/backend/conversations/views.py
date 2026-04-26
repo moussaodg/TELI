@@ -11,7 +11,13 @@ from accounts.models import Administrator, role
 class ConversationViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
-    def view_conversation(self, request, channel_user_id):
+    def list(self, request):
+        conversations = ConversationService.list_conversations()
+        serializer = ConversationSerializer(conversations, many=True)
+        return Response(serializer.data, status=200)
+
+    @action(detail=False, methods=['get'], url_path='view-conversation/(?P<channel_user_id>[^/.]+)')
+    def view_conversation(self, request, channel_user_id=None):
         try:
             conversation = ConversationService.get_conversation_by_channel_user(channel_user_id)
         except Conversation.DoesNotExist:
@@ -23,8 +29,15 @@ class ConversationViewSet(viewsets.ViewSet):
             'conversation': conversation_serializer.data,
             'messages': message_serializer.data
         }, status=200)
-    
-    def view_single_message(self, request, message_id):
+
+    @action(detail=False, methods=['get'], url_path='messages')
+    def list_messages(self, request):
+        messages = ConversationService.list_messages()
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data, status=200)
+
+    @action(detail=False, methods=['get'], url_path='messages/(?P<message_id>[^/.]+)')
+    def view_single_message(self, request, message_id=None):
         try:
             message = ConversationService.get_message(message_id)
         except Message.DoesNotExist:
@@ -32,18 +45,9 @@ class ConversationViewSet(viewsets.ViewSet):
         
         message_serializer = MessageSerializer(message)
         return Response(message_serializer.data, status=200)
-    
-    def list_conversations(self, request):
-        conversations = ConversationService.list_conversations()
-        serializer = ConversationSerializer(conversations, many=True)
-        return Response(serializer.data, status=200)
-    
-    def list_messages(self, request):
-        messages = ConversationService.list_messages()
-        serializer = MessageSerializer(messages, many=True)
-        return Response(serializer.data, status=200)
-    
-    def modify_message(self, request, message_id):
+
+    @action(detail=False, methods=['patch'], url_path='messages/(?P<message_id>[^/.]+)')
+    def modify_message(self, request, message_id=None):
         try:
             message = ConversationService.get_message(message_id)
         except Message.DoesNotExist:
@@ -54,24 +58,9 @@ class ConversationViewSet(viewsets.ViewSet):
             serializer.save()
             return Response(serializer.data, status=200)
         return Response(serializer.errors, status=400)
-    
-    def close_conversation(self, request, conversation_id):
-        try:
-            conversation = Conversation.objects.get(id=conversation_id)
-        except Conversation.DoesNotExist:
-            return Response({'message': 'Conversation not found'}, status=404)
-        ConversationService.close_conversation(conversation)
-        return Response({'message': 'Conversation closed successfully'}, status=200)
-    
-    def reopen_conversation(self, request, channel_user_id):
-        try:
-            conversation = ConversationService.get_conversation_by_channel_user(channel_user_id)
-        except Conversation.DoesNotExist:
-            return Response({'message': 'Conversation not found'}, status=404)
-        ConversationService.reopen_conversation(conversation)
-        return Response({'message': 'Conversation reopened successfully'}, status=200)
-    
-    def delete_message(self, request, message_id):
+
+    @action(detail=False, methods=['delete'], url_path='messages/(?P<message_id>[^/.]+)')
+    def delete_message(self, request, message_id=None):
         try:
             message = ConversationService.get_message(message_id)
             ConversationService.delete_message(message)
@@ -79,11 +68,26 @@ class ConversationViewSet(viewsets.ViewSet):
         except Message.DoesNotExist:
             return Response({'message': 'Message not found'}, status=404)
 
+    @action(detail=False, methods=['post'], url_path='close-conversation/(?P<conversation_id>[^/.]+)')
+    def close_conversation(self, request, conversation_id=None):
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+        except Conversation.DoesNotExist:
+            return Response({'message': 'Conversation not found'}, status=404)
+        ConversationService.close_conversation(conversation)
+        return Response({'message': 'Conversation closed successfully'}, status=200)
 
-class ConversationManagementViewset(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
+    @action(detail=False, methods=['post'], url_path='reopen-conversation/(?P<channel_user_id>[^/.]+)')
+    def reopen_conversation(self, request, channel_user_id=None):
+        try:
+            conversation = ConversationService.get_conversation_by_channel_user(channel_user_id)
+        except Conversation.DoesNotExist:
+            return Response({'message': 'Conversation not found'}, status=404)
+        ConversationService.reopen_conversation(conversation)
+        return Response({'message': 'Conversation reopened successfully'}, status=200)
 
-    def prendre_en_charge_conversation(self, request, conversation_id):
+    @action(detail=False, methods=['post'], url_path='assign-conversation/(?P<conversation_id>[^/.]+)')
+    def prendre_en_charge_conversation(self, request, conversation_id=None):
         try:
             conversation = Conversation.objects.get(id=conversation_id)
         except Conversation.DoesNotExist:
