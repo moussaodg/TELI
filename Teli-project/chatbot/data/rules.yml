@@ -1,0 +1,31 @@
+version: "3.6"
+rules:
+- rule: Greet user
+  steps:
+  - intent: greet
+  - action: utter_greet
+
+- rule: Goodbye user
+  steps:
+  - intent: goodbye
+  - action: utter_goodbye
+
+- rule: Ask for help
+  steps:
+  - intent: ask_help
+  - action: utter_ask_help
+
+- rule: Ask balance
+  steps:
+  - intent: ask_balance
+  - action: utter_ask_balance
+
+- rule: Open account
+  steps:
+  - intent: open_account
+  - action: utter_open_account
+
+- rule: Fallback
+  steps:
+  - intent: fallback
+  - action: utter_default

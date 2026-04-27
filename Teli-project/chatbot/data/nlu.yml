@@ -1,0 +1,41 @@
+version: "3.6"
+nlu:
+- intent: greet
+  examples: |
+    - bonjour
+    - salut
+    - hello
+    - bonsoir
+    - coucou
+
+- intent: goodbye
+  examples: |
+    - au revoir
+    - bye
+    - à bientôt
+    - bonne journée
+
+- intent: ask_help
+  examples: |
+    - j'ai besoin d'aide
+    - aide-moi
+    - je ne comprends pas
+    - pouvez-vous m'aider
+
+- intent: ask_balance
+  examples: |
+    - quel est mon solde
+    - combien il me reste
+    - montre-moi mon solde
+    - état du compte
+
+- intent: open_account
+  examples: |
+    - je veux ouvrir un compte
+    - comment créer un compte
+    - je souhaite m'inscrire
+    - ouvrir un nouveau compte
+
+- intent: fallback
+  examples: |
+    - ...

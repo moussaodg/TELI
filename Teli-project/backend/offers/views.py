@@ -2,16 +2,17 @@ from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from .models import DailyOffer, SpecialOffer, Offer
-from .serializers import DailyOfferSerializer, SpecialOfferSerializer, OfferSerializer, UpdateOfferSerializer
+from .models import DailyOffer, SpecialOffer
+from .serializers import DailyOfferSerializer, SpecialOfferSerializer, OfferSerializer
 from .services import OfferService
-from django.utils import timezone
 
 class OfferConfigurationsViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     def list(self, request):
-        offers = Offer.objects.all()
+        daily_offers = DailyOffer.objects.all()
+        special_offers = SpecialOffer.objects.all()
+        offers = list(daily_offers) + list(special_offers)
         serializer = OfferSerializer(offers, many=True)
         return Response(serializer.data)
     def create(self, request):
@@ -22,16 +23,22 @@ class OfferConfigurationsViewSet(viewsets.ViewSet):
         if not getattr(user, 'role', None) or user.role.authorisation != 'superadmin':
             return Response({'message': 'Unauthorized - superadmin required'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        serializer = OfferSerializer(data=request.data)
+        offer_type = request.data.get('offer_type')
+        if offer_type == 'daily':
+            serializer = DailyOfferSerializer(data=request.data)
+        elif offer_type == 'special':
+            serializer = SpecialOfferSerializer(data=request.data)
+        else:
+            return Response({'offer_type': 'Le type d offre doit être "daily" ou "special".'}, status=status.HTTP_400_BAD_REQUEST)
+
         if serializer.is_valid():
             serializer.save(configurator=user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def retrieve(self, request, pk=None):
-        try:
-            offer = Offer.objects.get(pk=pk)
-        except Offer.DoesNotExist:
+        offer = self._get_offer_by_pk(pk)
+        if offer is None:
             return Response({'detail': 'Offer not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = OfferSerializer(offer)
@@ -45,12 +52,11 @@ class OfferConfigurationsViewSet(viewsets.ViewSet):
         if not user.role or user.role.authorisation != 'superadmin':
             return Response({'message': 'Unauthorized - superadmin required'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        try:
-            offer = Offer.objects.get(pk=pk)
-        except Offer.DoesNotExist:
+        offer = self._get_offer_by_pk(pk)
+        if offer is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UpdateOfferSerializer(offer, data=request.data, partial=True)
+        serializer = DailyOfferSerializer(offer, data=request.data, partial=True) if isinstance(offer, DailyOffer) else SpecialOfferSerializer(offer, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -82,28 +88,23 @@ class OfferConfigurationsViewSet(viewsets.ViewSet):
         if not user.role or user.role.authorisation != 'superadmin':
             return Response({'message': 'Unauthorized - superadmin required'}, status=status.HTTP_401_UNAUTHORIZED)
         
-        try:
-            offer = Offer.objects.get(pk=pk)
-            offer.delete()
-            return Response({'message': 'Offre supprimée avec succès'}, status=status.HTTP_204_NO_CONTENT)
-        except Offer.DoesNotExist:
+        offer = self._get_offer_by_pk(pk)
+        if offer is None:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        daily_offers = OfferService.list_daily_offers()
-        serializer = DailyOfferSerializer(daily_offers, many=True)
-        return Response(serializer.data)
+        offer.delete()
+        return Response({'message': 'Offre supprimée avec succès'}, status=status.HTTP_204_NO_CONTENT)
     
     def list_daily_offers(self, request):
         daily_offers = OfferService.list_daily_offers()
         serializer = DailyOfferSerializer(daily_offers, many=True)
         return Response(serializer.data)
-        
-        if not user.role or user.role.authorisation != 'superadmin':
-            return Response({'message': 'Unauthorized - superadmin required'}, status=status.HTTP_401_UNAUTHORIZED)
-        
+
+    def _get_offer_by_pk(self, pk):
         try:
-            offer = Offer.objects.get(pk=pk)
-            offer.delete()
-            return Response({'message': 'Offre supprimée avec succès'}, status=status.HTTP_204_NO_CONTENT)
-        except Offer.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            return DailyOffer.objects.get(pk=pk)
+        except DailyOffer.DoesNotExist:
+            try:
+                return SpecialOffer.objects.get(pk=pk)
+            except SpecialOffer.DoesNotExist:
+                return None
     

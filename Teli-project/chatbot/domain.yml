@@ -1,0 +1,26 @@
+version: "3.6"
+intents:
+  - greet
+  - goodbye
+  - ask_help
+  - ask_balance
+  - open_account
+  - fallback
+
+responses:
+  utter_greet:
+    - text: "Bonjour ! Comment puis-je vous aider aujourd'hui ?"
+  utter_goodbye:
+    - text: "Au revoir ! N'hésitez pas à revenir si vous avez d'autres questions."
+  utter_ask_help:
+    - text: "Je suis là pour vous aider. Que voulez-vous savoir ?"
+  utter_ask_balance:
+    - text: "Votre solde se met à jour automatiquement. Voulez-vous voir votre dernier relevé ?"
+  utter_open_account:
+    - text: "Pour ouvrir un compte, j'ai besoin de quelques informations. Voulez-vous commencer ?"
+  utter_default:
+    - text: "Je n'ai pas bien compris. Pouvez-vous reformuler s'il vous plaît ?"
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

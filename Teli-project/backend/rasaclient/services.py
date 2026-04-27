@@ -1,4 +1,5 @@
 import requests
+from django.conf import settings
 from .models import RasaClient
 from conversations.models import Conversation, Actor, Message
 from notifications.models import Notification
@@ -7,18 +8,22 @@ from notifications.models import Notification
 class RasaClientService:
     @staticmethod
     def get_or_create_client(channel, channel_user_id):
-        conversation = Conversation.objects.create()
-        rasa_client, _ = RasaClient.objects.get_or_create(
+        rasa_client, created = RasaClient.objects.get_or_create(
             Channel=channel,
             ChannelUserId=channel_user_id,
-            defaults={'ConversationId': conversation}
+            defaults={'ConversationId': Conversation.objects.create()}
         )
         return rasa_client
 
     @staticmethod
     def send_to_rasa(channel_user_id, message_text):
+        rasa_url = getattr(
+            settings,
+            'RASA_SERVER_URL',
+            'http://chatbot:5005/webhooks/rest/webhook'
+        )
         response = requests.post(
-            "http://chatbot:5005/webhooks/rest/webhook",
+            rasa_url,
             json={"sender": channel_user_id, "message": message_text},
             timeout=10,
         )
@@ -97,3 +102,30 @@ class RasaClientService:
         bot_messages = RasaClientService.create_bot_messages(conversation, bot_actor, user_message, rasa_data)
         RasaClientService.create_notifications_for_messages(bot_messages)
         return conversation, user_message, bot_messages
+
+    @staticmethod
+    def create_conversation_for_client(rasa_client):
+        return Conversation.objects.create()
+
+    @staticmethod
+    def create_administrator_intervention_request(conversation, message):
+        Notification.objects.create(
+            conversation=conversation,
+            message=message,
+            gravity='escalation',
+            status=False,
+            problem_type='Autre',
+            context={
+                'request_type': 'administrator_intervention',
+                'request_text': message.content,
+            },
+        )
+
+        bot_actor = RasaClientService.get_or_create_bot_actor()
+        return Message.objects.create(
+            conversation=conversation,
+            sender=bot_actor,
+            content='Votre demande a été transmise à un administrateur. Veuillez patienter.',
+            message_type='system',
+            reply_to=message,
+        )
